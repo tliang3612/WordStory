@@ -13,25 +13,41 @@ import (
 )
 
 func main() {
+
+	filename := flag.String("file", "gopher.json", "the json file with the goword story")
+
+	valid := false
+
+	fmt.Println("Do you wish to start a console or a web story? Type c or w")
+	var input string
+
+	//do while valid is false. ok is true in first loop
+	for ok := true; ok; ok = valid {
+		fmt.Scan(&input)
+
+		if input == "c" {
+			RunConsoleStory(*filename)
+		} else if input == "w" {
+			RunWebStory(*filename)
+		} else {
+			fmt.Println("Enter a valid entry")
+			valid = false
+		}
+	}
+
+}
+
+func RunWebStory(filename string) {
 	//define flags
 	port := flag.Int("port", 3000, "the port to start the word story on web")
-	filename := flag.String("file", "gopher.json", "the json file with the goword story")
 
 	// parse defined flags
 	flag.Parse()
-	fmt.Printf("Using the story in %s.\n", *filename)
+	fmt.Printf("Using the story in %s.\n", filename)
 
-	f, err := os.Open(*filename)
-	if err != nil {
-		panic(err)
-	}
+	story := createStory(filename)
 
-	story, err := go_word.DecodeJsonToStruct(f)
-	if err != nil {
-		panic(err)
-	}
-
-	tpl := template.Must(template.New("").Parse(storyTemplate))
+	tpl := template.Must(template.New("web").Parse(webStoryTemplate))
 
 	h := go_word.NewHandler(
 		story,
@@ -44,21 +60,72 @@ func main() {
 	fmt.Printf("Starting the server on port %d \n", *port)
 	//Create http server with port and handler
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), mux))
+}
 
+func RunConsoleStory(filename string) {
+	story := createStory(filename)
+
+	tpl := template.Must(template.New("console").Parse(consoleStoryTemplate))
+
+	chp := "intro"
+
+	go_word.ExecuteDefaultChapter(story, chp, tpl)
+
+	var valid bool
+
+	// default values
+	var quit = false
+	var input = "0"
+
+	for quit == false {
+		valid = false
+
+		fmt.Println("Select the chapter to go to as an integer")
+		fmt.Scan(&input)
+
+		if input == "q" {
+			quit = true
+			continue
+		}
+
+		for valid == false {
+			chp, valid = go_word.ExecuteInput(input, story, chp, tpl)
+			if valid == false {
+				fmt.Println("Please enter valid input")
+				fmt.Scan(&input)
+				continue
+			}
+			valid = true
+		}
+	}
+
+}
+
+func createStory(filename string) go_word.Story {
+	f, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+	story, err := go_word.CreateStory(f)
+	if err != nil {
+		panic(err)
+	}
+
+	return story
 }
 
 func pathFunc(r *http.Request) string {
 	path := strings.TrimSpace(r.URL.Path)
 
 	if path == "/story" || path == "/story/" {
-		path = "/stories/"
+		path = "/story/intro" //set default path
 	}
 
 	//trim "/story/" from returned path
 	return path[len("/story/"):]
 }
 
-var storyTemplate = `
+var webStoryTemplate = `
 <!DOCTYPE html>
 <html>
 	<head>
@@ -75,7 +142,9 @@ var storyTemplate = `
 			<ul>
 				{{range .Options}}
 					<span id="choice"></span>
-					<li href= "/story/{{.Chapter }}">{{.Text }}</li>
+					<li>
+						<a href= "/story/{{.Chapter }}">{{.Text }}</a>
+					</li>
 				{{ end }}
 			</ul>
 		</div>
@@ -109,3 +178,18 @@ var storyTemplate = `
 		</style>
 	</body>
 </html>`
+
+var consoleStoryTemplate = `
+{{.Title}}
+
+{{range .Paragraphs}}
+{{.}}
+{{end}}
+
+{{range .Options}}
+{{.Text}}
+{{end}}
+
+
+
+`
