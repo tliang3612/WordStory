@@ -89,7 +89,7 @@ func RunConsoleStory(filename string) {
 		}
 
 		for valid == false {
-			chp, valid = go_word.ExecuteInput(input, story, chp, tpl)
+			valid = go_word.ExecuteInput(input, story, &chp, tpl)
 			if valid == false {
 				fmt.Println("Please enter valid input")
 				fmt.Scan(&input)

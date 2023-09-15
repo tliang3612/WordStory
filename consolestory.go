@@ -9,7 +9,7 @@ import (
 )
 
 // return next chapter and false if invalid input. true if valid
-func ExecuteInput(input string, s Story, chp string, t *template.Template) (string, bool) {
+func ExecuteInput(input string, s Story, chp *string, t *template.Template) bool {
 
 	//convert input to int
 	index, err := strconv.Atoi(input)
@@ -18,15 +18,13 @@ func ExecuteInput(input string, s Story, chp string, t *template.Template) (stri
 		panic(err)
 	}
 
-	index -= 1
+	if chapter, ok := s[*chp]; ok {
 
-	if chapter, ok := s[chp]; ok {
+		n := len(s[*chp].Options)
 
-		n := len(s[chp].Options)
-
-		if index > n {
+		if index >= n {
 			fmt.Println("Index out of bounds")
-			return chp, false
+			return false
 		}
 
 		gotoChp := chapter.Options[index].Chapter
@@ -36,10 +34,11 @@ func ExecuteInput(input string, s Story, chp string, t *template.Template) (stri
 			log.Printf("%v", err)
 			panic(err)
 		}
-		return gotoChp, true
+		*chp = gotoChp
+		return true
 	}
 
-	return chp, false
+	return false
 }
 
 func ExecuteDefaultChapter(s Story, chp string, t *template.Template) {
