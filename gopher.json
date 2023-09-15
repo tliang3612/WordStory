@@ -1,8 +1,7 @@
 {
-
-    "story-arc": {
-      "title": "A title for that story arc. Think of it like a chapter title.",
-      "story": [
+    "intro": {
+      "title": "Ted's cool adventure",
+      "paragraphs": [
         "A series of paragraphs, each represented as a string in a slice.",
         "This is a new paragraph in this particular story arc."
       ],
@@ -10,7 +9,7 @@
       "options": [
         {
           "text": "the text to render for this option. eg 'venture down the dark passage'",
-          "arc": "the name of the story arc to navigate to. This will match the story-arc key at the very root of the JSON document"
+          "chapter": "the name of the story arc to navigate to. This will match the story-arc key at the very root of the JSON document"
         }
       ]
     }
